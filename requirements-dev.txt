@@ -1,0 +1,7 @@
+black
+flake8
+mypy
+bandit
+pytest
+pytest-cov
+requests-mock
