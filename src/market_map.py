@@ -38,7 +38,12 @@ def search_results(query: str, max_results: int = 5, api_key: str | None = None)
         "num": max_results,
     }
     client = Client(api_key=key)
-    results = client.search(params)
+    try:
+        results = client.search(params)
+    except Exception as e:  # network or HTTP error
+        print(f"SerpAPI request failed: {e}")
+        return []
+
     links = []
     for r in results.get("organic_results", []):
         links.append(r["link"])
