@@ -2,12 +2,14 @@
 
 import os
 import re
+import json
 from typing import Iterable, List, Tuple
 
 import matplotlib.pyplot as plt
 import requests
 from bs4 import BeautifulSoup
 from serpapi.core import Client
+import openai
 
 USER_AGENT = {"User-Agent": "Mozilla/5.0"}
 
@@ -16,6 +18,8 @@ USER_AGENT = {"User-Agent": "Mozilla/5.0"}
 # before running the script or provide it via the ``--api-key`` command-line
 # option.
 SERPAPI_KEY = os.environ.get("SERPAPI_API_KEY")
+# Optional OpenAI key for refining results
+OPENAI_KEY = os.environ.get("OPENAI_API_KEY")
 
 
 def search_results(query: str, max_results: int = 5, api_key: str | None = None) -> List[str]:
@@ -77,6 +81,49 @@ def categorize(companies: Iterable[Tuple[str, str]]):
     return categories
 
 
+def refine_with_gpt(categories: dict[str, set[str]], query: str, api_key: str | None = None) -> dict[str, set[str]]:
+    """Use OpenAI's GPT to refine and validate the categorized companies.
+
+    If no API key is provided and the ``OPENAI_API_KEY`` environment variable is
+    not set, the original ``categories`` mapping is returned unchanged.
+    """
+
+    key = api_key or OPENAI_KEY
+    if not key:
+        return categories
+
+    openai.api_key = key
+
+    lines = []
+    for cat, names in categories.items():
+        lines.append(f"{cat}: {', '.join(sorted(names))}")
+
+    prompt = (
+        "Refine the following company categories for the market map about '"
+        f"{query}'. Remove irrelevant companies and ensure they are grouped into"
+        " appropriate categories. Return valid JSON mapping category names to"
+        " arrays of company names.\n\n" + "\n".join(lines)
+    )
+
+    try:
+        resp = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful research assistant that organizes companies",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0,
+        )
+        data = json.loads(resp.choices[0].message["content"])
+        return {cat: set(names) for cat, names in data.items()}
+    except Exception as e:
+        print("GPT refinement failed:", e)
+        return categories
+
+
 def create_market_map(categories: dict[str, set[str]], output: str = "market_map.png"):
     """Render the market map as a PNG image."""
 
@@ -93,7 +140,13 @@ def create_market_map(categories: dict[str, set[str]], output: str = "market_map
     fig.savefig(output)
 
 
-def build_market_map(sector_query: str, max_results: int = 5, api_key: str | None = None, output: str = "market_map.png"):
+def build_market_map(
+    sector_query: str,
+    max_results: int = 5,
+    api_key: str | None = None,
+    output: str = "market_map.png",
+    openai_key: str | None = None,
+) -> None:
     """Fetch company lists and build a market map image."""
 
     search_query = f"{sector_query} list"
@@ -102,6 +155,7 @@ def build_market_map(sector_query: str, max_results: int = 5, api_key: str | Non
     for url in urls:
         all_companies.extend(extract_companies(url))
     categories = categorize(all_companies)
+    categories = refine_with_gpt(categories, sector_query, api_key=openai_key)
     create_market_map(categories, output=output)
     print(f"Market map saved to {output}")
     for cat, names in categories.items():
@@ -118,7 +172,15 @@ if __name__ == "__main__":
     parser.add_argument("--api-key", dest="api_key", help="SerpAPI key (optional)")
     parser.add_argument("--max-results", type=int, default=5, help="number of Google results to parse")
     parser.add_argument("--output", default="market_map.png", help="output image path")
+    parser.add_argument("--openai-key", dest="openai_key", help="OpenAI API key (optional)")
     args = parser.parse_args()
 
     query_str = " ".join(args.query)
-    build_market_map(query_str, max_results=args.max_results, api_key=args.api_key, output=args.output)
+    build_market_map(
+        query_str,
+        max_results=args.max_results,
+        api_key=args.api_key,
+        output=args.output,
+        openai_key=args.openai_key,
+    )
+
