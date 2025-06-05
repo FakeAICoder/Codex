@@ -1,0 +1,5 @@
+serpapi
+requests
+beautifulsoup4
+matplotlib
+openai
