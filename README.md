@@ -18,8 +18,7 @@ If SerpAPI returns a 401 error when running the script, verify that your API key
 
 ## Usage
 
-Run the script from the repository root. If an OpenAI key is provided, the
-results will be refined using GPT for more accurate categorization:
+Run the script from the repository root. If an OpenAI key is provided, the results will be refined using GPT for more accurate categorization:
 
 ```bash
 python src/market_map.py --max-results 5 "proptech sensor companies" \
