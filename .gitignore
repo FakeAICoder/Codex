@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+.mypy_cache/
+.pytest_cache/
+.market_map.png

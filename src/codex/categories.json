@@ -1,0 +1,6 @@
+{
+    "Environmental": ["air quality", "climate", "environment"],
+    "Occupancy": ["occupancy", "people counting"],
+    "Energy": ["energy", "hvac"],
+    "Security": ["security", "motion", "safety"]
+}
