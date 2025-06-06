@@ -11,6 +11,7 @@ from codex.categorize import categorize, load_categories
 from codex.scraper import scrape_companies
 from codex.search import SearchClient
 from codex.visualize import create_market_map
+from codex.figma import send_to_figma
 
 
 def build_market_map(
@@ -29,6 +30,7 @@ def build_market_map(
     companies = scrape_companies(urls)
     categories = categorize(companies, load_categories())
     create_market_map(categories, output=output)
+    send_to_figma(categories)
     for cat, names in categories.items():
         logging.info("%s (%d companies)", cat, len(names))
         for n in sorted(names):

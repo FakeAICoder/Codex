@@ -16,6 +16,8 @@ This tool generates a one-page market map image by fetching Google search result
 
 ## Usage
 
+### Command Line Usage
+
 Run the script from the repository root:
 
 ```bash
@@ -25,3 +27,22 @@ python src/market_map.py --max-results 5 "proptech sensor companies"
 The script prints the categorized companies and creates a `market_map.png` image.
 
 Category keywords can be customised in `src/codex/categories.json`.
+
+### Web Application
+
+A small Django backend and Node.js frontend are included.
+
+1. Install Node.js packages:
+   ```bash
+   cd node && npm install
+   ```
+2. Run the Django API:
+   ```bash
+   python webapp/manage.py runserver
+   ```
+3. In another terminal start the Node frontend:
+   ```bash
+   node index.js
+   ```
+The frontend forwards requests to the Django API where company data is
+scraped and organised before generating the market map image.
